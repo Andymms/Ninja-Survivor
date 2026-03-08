@@ -121,7 +121,7 @@ function checkCollisions() {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < player.radius + enemy.radius) {
-            player.hp -= 0.2; 
+            player.hp -= 0.5; 
             if (player.hp <= 0) game.gameOver = true;
         }
 
@@ -149,7 +149,33 @@ function checkCollisions() {
         }
     });
 
-    enemies = enemies.filter(enemy => enemy.health > 0);
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].health <= 0) {
+            for (let p = 0; p < 10; p++) {
+                particles.push({
+                    x: enemies[i].x,
+                    y: enemies[i].y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    life: 30
+                });
+            }
+            enemies.splice(i, 1);
+        }
+    }
+
+}
+
+
+function updateParticles() {
+
+    particles.forEach(particle => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life--;
+    });
+
+    particles = particles.filter(p => p.life > 0);
 }
 
 function draw() {
@@ -208,6 +234,13 @@ function draw() {
         ctx.fill();
     });
 
+    particles.forEach(particle => {
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(107, 0, 0, ${particle.life / 30})`;
+        ctx.fill();
+    });
+
     ctx.restore();
 
 }
@@ -230,6 +263,7 @@ function gameLoop() {
     updatePlayer();
     updateSword();
     checkCollisions();
+    updateParticles();
 
     game.spawnTimer++;
     if (game.spawnTimer >= game.spawnInterval) {
