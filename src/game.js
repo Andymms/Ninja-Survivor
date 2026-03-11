@@ -19,7 +19,9 @@ const player = {
     speed: 4,
     color: '#972f2f',
     hp: 100,
-    maxHp: 100
+    maxHp: 100,
+    xp: 0,
+    nextLevelXp: 100
 };
 
 const sword = {
@@ -34,6 +36,7 @@ const sword = {
 
 let enemies = [];
 let particles = [];
+let xpGems = [];
 
 window.addEventListener('keydown', (e) => {
     game.keys[e.key] = true;
@@ -84,7 +87,7 @@ function spawnEnemy() {
     };
 
     const edge = Math.floor(Math.random() * 4);
-    
+
     if (edge === 0) {
         // TOP
         enemy.x = Math.random() * game.width;
@@ -121,19 +124,19 @@ function checkCollisions() {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < player.radius + enemy.radius) {
-            player.hp -= 0.5; 
+            player.hp -= 0.5;
             if (player.hp <= 0) game.gameOver = true;
         }
 
         if (sword.attacking) {
             const swordArc = Math.PI / 4; // Total width of the hit zone
             const distToEnemy = distance;
-            
+
             if (distToEnemy < sword.length + enemy.radius) {
                 const angleToEnemy = Math.atan2(dy, dx);
-                
+
                 let angleDiff = angleToEnemy - sword.angle;
-                
+
                 while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                 while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
 
@@ -159,7 +162,13 @@ function checkCollisions() {
                     vy: (Math.random() - 0.5) * 5,
                     life: 30
                 });
+
             }
+            xpGems.push({
+                x: enemies[i].x,
+                y: enemies[i].y,
+                value: 10
+            });
             enemies.splice(i, 1);
         }
     }
@@ -178,21 +187,53 @@ function updateParticles() {
     particles = particles.filter(p => p.life > 0);
 }
 
+function checkXPGemCollisions() {
+    for (let index = xpGems.length - 1; index >= 0; index--) {
+        const gem = xpGems[index];
+        const dx = gem.x - player.x;
+        const dy = gem.y - player.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < player.radius + 10) {
+            xpGems.splice(index, 1);
+            player.xp += gem.value;
+            if (player.xp >= player.nextLevelXp) {
+                player.xp -= player.nextLevelXp;
+                player.nextLevelXp += 50;
+                player.speed += 0.5;
+                player.maxHp += 20;
+                player.hp = player.maxHp;
+                sword.damage += 5;
+                sword.attackDuration -= 0.5;
+            }
+        }
+    };
+}
+
 function draw() {
 
     ctx.fillStyle = '#16213e';
     ctx.fillRect(0, 0, game.width, game.height);
 
+    // Player XP bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; 
+    ctx.fillRect(0, 0, game.width, 10);
+
+    ctx.fillStyle = '#00d4ff';
+    let barWidth = (player.xp / player.nextLevelXp) * game.width;
+    ctx.fillRect(0, 0, barWidth, 10);
+
     ctx.save();
-    
-    if (game.screenShake && game.screenShakeProgress > 0) { 
+
+    if (game.screenShake && game.screenShakeProgress > 0) {
         let x = (Math.random() - 0.5) * 3;
         let y = (Math.random() - 0.5) * 3;
         ctx.translate(x, y)
 
         game.screenShakeProgress--;
-        if (game.screenShakeProgress <= 0) game.screenShake = false 
+        if (game.screenShakeProgress <= 0) game.screenShake = false
     }
+
     // Player
     ctx.beginPath();
     ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
@@ -207,23 +248,23 @@ function draw() {
 
     if (sword.attacking) {
         const currentLength = sword.length;
-        const arcSize = Math.PI / 6; 
+        const arcSize = Math.PI / 6;
 
         ctx.save();
 
         // FILLED CONE
         ctx.beginPath();
-        ctx.moveTo(player.x  , player.y);  // Center of player
+        ctx.moveTo(player.x, player.y);  // Center of player
         ctx.arc(player.x, player.y, currentLength, sword.angle - arcSize, sword.angle + arcSize);
         ctx.closePath();
 
         ctx.fillStyle = '#fff'
         ctx.fill();
-    
+
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 2;
         ctx.stroke();
-    
+
         ctx.restore();
     }
 
@@ -238,6 +279,13 @@ function draw() {
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(107, 0, 0, ${particle.life / 30})`;
+        ctx.fill();
+    });
+
+    xpGems.forEach(gem => {
+        ctx.beginPath();
+        ctx.arc(gem.x, gem.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff240';
         ctx.fill();
     });
 
@@ -272,6 +320,7 @@ function gameLoop() {
     }
 
     updateEnemies();
+    checkXPGemCollisions();
     draw();
     requestAnimationFrame(gameLoop);
 }
