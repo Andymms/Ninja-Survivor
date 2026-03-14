@@ -16,12 +16,14 @@ const player = {
     x: 400,
     y: 300,
     radius: 20,
-    speed: 4,
+    speed: 3,
     color: '#972f2f',
     hp: 100,
     maxHp: 100,
     xp: 0,
-    nextLevelXp: 100
+    nextLevelXp: 100,
+    level: 1,
+    magnetRange: 0
 };
 
 const sword = {
@@ -124,7 +126,7 @@ function checkCollisions() {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < player.radius + enemy.radius) {
-            player.hp -= 0.5;
+            player.hp -= 0.8;
             if (player.hp <= 0) game.gameOver = true;
         }
 
@@ -194,17 +196,28 @@ function checkXPGemCollisions() {
         const dy = gem.y - player.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
+        if (distance < player.magnetRange && player.magnetRange > 0) {
+            const angle = Math.atan2(player.y - gem.y, player.x - gem.x);
+            gem.x += Math.cos(angle) * 3;
+            gem.y += Math.sin(angle) * 3;
+        }
+
         if (distance < player.radius + 10) {
             xpGems.splice(index, 1);
             player.xp += gem.value;
             if (player.xp >= player.nextLevelXp) {
+                player.level++;
+                if (player.level === 3) {
+                    player.magnetRange = 100;
+                }
                 player.xp -= player.nextLevelXp;
                 player.nextLevelXp += 50;
-                player.speed += 0.5;
-                player.maxHp += 20;
+                player.speed = Math.min(5, player.speed + 0.5);
+                player.maxHp = Math.min(150, player.maxHp + 10);
                 player.hp = player.maxHp;
-                sword.damage += 5;
-                sword.attackDuration -= 0.5;
+                sword.damage = Math.min(50, sword.damage + 2);
+                sword.attackDuration = Math.max(8, sword.attackDuration - 0.5);
+                game.spawnInterval = Math.max(20, game.spawnInterval - 2);  
             }
         }
     };
@@ -214,14 +227,6 @@ function draw() {
 
     ctx.fillStyle = '#16213e';
     ctx.fillRect(0, 0, game.width, game.height);
-
-    // Player XP bar
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; 
-    ctx.fillRect(0, 0, game.width, 10);
-
-    ctx.fillStyle = '#00d4ff';
-    let barWidth = (player.xp / player.nextLevelXp) * game.width;
-    ctx.fillRect(0, 0, barWidth, 10);
 
     ctx.save();
 
@@ -290,6 +295,14 @@ function draw() {
     });
 
     ctx.restore();
+
+    // Player XP bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; 
+    ctx.fillRect(0, 0, game.width, 10);
+
+    ctx.fillStyle = '#00d4ff';
+    let barWidth = (player.xp / player.nextLevelXp) * game.width;
+    ctx.fillRect(0, 0, barWidth, 10);
 
 }
 
