@@ -12,8 +12,9 @@ Built from scratch in **HTML5 Canvas** with vanilla JavaScript—no engines, no 
 |---------|--------|----------------|
 | **Snappy Combat** | ✅ Done | Hollow Knight-style slash with hit detection |
 | **Enemy AI** | ✅ Done | Procedural spawning, pathfinding to player |
-| **Game Feel** | 🚧 WIP | Screenshake, particle effects, juice |
-| **Progression** | 📋 Planned | XP system, upgrades, weapon evolutions |
+| **Game Feel** | ✅ Done | Screenshake, particle effects, juice |
+| **Progression** | 🚧 WIP | XP system, upgrades, weapon evolutions |
+| **UI** | 🚧 WIP | Game over screen, Start menu, Level up pop up |
 | **Audio** | 📋 Planned | Dynamic sound effects, music |
 
 ---
